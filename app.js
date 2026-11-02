@@ -78,9 +78,9 @@ bootstrap().catch((error) => {
 });
 
 async function bootstrap() {
-  state.sql = await window.initSqlJs();
+  if (!window.isGcodeSimulator) state.sql = await window.initSqlJs();
 
-  refs.fileInput.addEventListener("change", handleFileSelection);
+  if (!window.isGcodeSimulator) refs.fileInput.addEventListener("change", handleFileSelection);
   refs.downloadBtn.addEventListener("click", downloadGcode);
   refs.output.addEventListener("scroll", updateGcodeHighlight);
   refs.rewindBtn.addEventListener("click", () => stepPlayback(-5));
@@ -108,6 +108,7 @@ async function bootstrap() {
   refs.zoomOutBtn.addEventListener("click", () => zoomPreview(1 / 1.25));
   refs.zoomFitBtn.addEventListener("click", resetPreviewView);
   new ResizeObserver(updatePreviewMarkers).observe(refs.preview);
+  if (window.isGcodeSimulator) setupGcodeSimulator();
 }
 
 async function handleFileSelection(event) {
@@ -370,6 +371,7 @@ function parseSQLiteC2D(bytes, fileName) {
   const elements = [];
   const elementsByUuid = new Map();
   const toolpaths = [];
+  const toolpathGroups = [];
   const warnings = [];
 
   for (const row of itemRows) {
@@ -400,6 +402,7 @@ function parseSQLiteC2D(bytes, fileName) {
       continue;
     }
 
+    if (type === "toolpath_group") toolpathGroups.push(payload);
     if (type === "toolpath") {
       toolpaths.push({
         ...payload,
@@ -433,6 +436,7 @@ function parseSQLiteC2D(bytes, fileName) {
     elements,
     elementsByUuid,
     toolpaths,
+    toolpathGroups,
     parseWarnings: warnings,
   };
 }
@@ -1488,11 +1492,11 @@ function renderPreview(parsed, generated) {
 
   const allPoints = [];
   for (const path of sourcePaths) {
-    allPoints.push(...path.points);
+    for (const point of path.points) allPoints.push(point);
   }
   for (const item of previewPaths) {
     for (const path of item.paths) {
-      allPoints.push(...path.points);
+      for (const point of path.points) allPoints.push(point);
     }
   }
 
@@ -1551,6 +1555,7 @@ function renderPreview(parsed, generated) {
       }
     }
   });
+  renderDrillingMarkers(staticPathsLayer, generated.playbackSegments);
 
   const progressLayer = document.createElementNS(SVG_NS, "g");
   svg.appendChild(progressLayer);
@@ -1751,7 +1756,33 @@ function updatePlaybackVisualization() {
     element.setAttribute("d", pathData.trim());
     fragment.appendChild(element);
   });
+  renderDrillingMarkers(fragment, generated.playbackSegments, state.playback.currentTimeSec);
   progressLayer.replaceChildren(fragment);
+}
+
+function renderDrillingMarkers(layer, segments, timeSec = Infinity) {
+  const holes = new Map();
+  for (const segment of segments) {
+    if (segment.motionType === "rapid" || segment.start.x !== segment.end.x || segment.start.y !== segment.end.y
+      || segment.end.z >= segment.start.z || segment.end.z >= 0 || timeSec <= segment.startTimeSec) continue;
+    const progress = Math.min(1, (timeSec - segment.startTimeSec) / (segment.endTimeSec - segment.startTimeSec));
+    if (segment.start.z + (segment.end.z - segment.start.z) * progress >= 0) continue;
+    holes.set(`${segment.end.x},${segment.end.y}`, segment);
+  }
+  for (const segment of holes.values()) {
+    const marker = document.createElementNS(SVG_NS, "path");
+    marker.setAttribute("class", "drilling-marker");
+    marker.setAttribute("d", `M ${formatNumber(segment.end.x)} ${formatNumber(-segment.end.y)} l 0 0`);
+    marker.setAttribute("fill", "none");
+    marker.setAttribute("stroke", segment.color || PREVIEW_COLORS[0]);
+    marker.setAttribute("stroke-width", "6");
+    marker.setAttribute("stroke-linecap", "round");
+    marker.setAttribute("vector-effect", "non-scaling-stroke");
+    const title = document.createElementNS(SVG_NS, "title");
+    title.textContent = "Vertical plunge below Z0 (symbolic size)";
+    marker.appendChild(title);
+    layer.appendChild(marker);
+  }
 }
 
 function polylineToSvgPath(path) {
@@ -1890,8 +1921,8 @@ function downloadGcode() {
 
 function setStatus(message, isError = false) {
   refs.status.textContent = message;
-  refs.status.style.background = isError ? "rgba(255, 123, 114, 0.12)" : "rgba(79, 209, 197, 0.08)";
-  refs.status.style.color = isError ? "#ffb4ad" : "";
+  refs.status.style.background = isError ? "#fff3cd" : "var(--panel-soft)";
+  refs.status.style.color = isError ? "#664d03" : "";
 }
 
 function sanitizePositiveNumber(value, fallback) {

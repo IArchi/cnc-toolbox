@@ -7,18 +7,137 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <nav class="app-nav" aria-label="Outils CNC">
+    <div class="app-tabs" role="tablist" aria-label="Outils CNC">
+      <button id="feedrate-tab" type="button" role="tab" data-page="feedrate" aria-controls="feedrate-page" aria-selected="false" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2m4 0h2m-8 4h2m4 0h2m-8 3h2m4 0h2"/></svg>
+        <span>Vitesses de coupe</span>
+      </button>
+      <button id="converter-tab" type="button" role="tab" data-page="converter" aria-controls="converter-page" aria-selected="true" aria-current="page" tabindex="0">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 16"/></svg>
+        <span>Convertir en G-code</span>
+      </button>
+      <button id="tiling-tab" type="button" role="tab" data-page="tiling" aria-controls="tiling-page" aria-selected="false" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18M3 12h18"/></svg>
+        <span>Usiner par sections</span>
+      </button>
+      <button id="simulator-tab" type="button" role="tab" data-page="simulator" aria-controls="simulator-page" aria-selected="false" tabindex="-1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>
+        <span>Simulate G-code</span>
+      </button>
+    </div>
+    <button id="language-toggle" class="language-toggle" type="button" data-no-translate aria-label="Switch to French">EN / FR</button>
+  </nav>
+  <section id="feedrate-page" role="tabpanel" aria-labelledby="feedrate-tab" tabindex="0" hidden>
+    <main class="feedrate-page">
+      <header class="feedrate-hero">
+        <h1>CNC Feedrate Calculator</h1>
+        <p>Enter your tool, material and spindle settings. Estimates update as you type — no calculate button needed.</p>
+      </header>
+      <div class="feedrate-layout">
+        <article class="feedrate-card">
+          <h2>Your settings</h2>
+          <form id="calculator-form" class="feedrate-grid" autocomplete="off">
+            <div class="feedrate-field feedrate-full">
+              <span id="units-label">Measurement units</span>
+              <div class="segmented-control" role="group" aria-labelledby="units-label">
+                <button type="button" class="segmented-button is-active" data-unit-mode="mm" aria-pressed="true">Millimeters</button>
+                <button type="button" class="segmented-button" data-unit-mode="inch" aria-pressed="false">Inches</button>
+              </div>
+              <input type="hidden" id="unitMode" value="mm">
+            </div>
+            <fieldset class="feedrate-grid feedrate-full">
+              <legend>1. Your tool</legend>
+              <div class="feedrate-field feedrate-full">
+                <label for="toolType">Tool type</label>
+                <select id="toolType" name="toolType">
+                  <option value="End Mill">End mill</option>
+                  <option value="VBit">V-bit</option>
+                  <option value="Drill">Drill</option>
+                </select>
+              </div>
+              <div class="feedrate-field">
+                <label for="flutes">Flute count</label>
+                <input id="flutes" name="flutes" type="number" min="1" max="12" step="1" value="2">
+              </div>
+              <div class="feedrate-field">
+                <label for="diameter">Diameter <span data-length-unit>(mm)</span></label>
+                <input id="diameter" name="diameter" type="number" min="0.1" step="0.1" value="6">
+              </div>
+            </fieldset>
+            <fieldset class="feedrate-grid feedrate-full">
+              <legend>2. Your material</legend>
+              <div class="feedrate-field">
+                <label for="material">Material</label>
+                <select id="material" name="material"></select>
+              </div>
+              <div class="feedrate-field">
+                <label for="thickness">Thickness <span data-length-unit>(mm)</span></label>
+                <input id="thickness" name="thickness" type="number" min="0.1" step="0.1" value="18">
+              </div>
+            </fieldset>
+            <fieldset class="feedrate-field feedrate-full">
+              <legend>3. Your spindle</legend>
+              <div class="segmented-control" role="group" aria-label="Spindle model">
+                <button type="button" class="segmented-button" data-rpm-mode="manual" aria-pressed="false">Other spindle</button>
+                <button type="button" class="segmented-button is-active" data-rpm-mode="makita" aria-pressed="true">Makita RT07</button>
+                <button type="button" class="segmented-button" data-rpm-mode="dewalt" aria-pressed="false">Dewalt DW6xx</button>
+              </div>
+              <input type="hidden" id="rpmMode" value="makita">
+              <div class="rpm-panel" data-rpm-panel="manual" hidden>
+                <label for="rpmManual">Spindle speed (RPM)</label>
+                <input id="rpmManual" name="rpmManual" type="number" min="1000" max="40000" step="100" value="18000">
+              </div>
+              <div class="rpm-panel" data-rpm-panel="preset">
+                <label for="rpmPreset">Speed dial position</label>
+                <select id="rpmPreset" name="rpmPreset"></select>
+                <div class="feedrate-help" id="rpmPresetHelp">Choose a dial position</div>
+              </div>
+            </fieldset>
+          </form>
+        </article>
+        <aside class="feedrate-card feedrate-results" aria-labelledby="results-title">
+          <h2 id="results-title">Your starting settings</h2>
+          <p class="feedrate-intro">Use these in your CAM software. Values follow your selected units.</p>
+          <div id="result-warning" class="feedrate-alert" role="status" hidden>Enter valid values in all fields to get an estimate.</div>
+          <div class="result-stack" id="result-stack" aria-live="polite" aria-atomic="true">
+            <section class="result result--primary" id="feedRateResult">
+              <div class="result-label">XY feed rate</div>
+              <div class="result-value" id="feedRateValue">—</div>
+              <div class="result-help" id="feedRateHelp"></div>
+            </section>
+            <section class="result">
+              <div class="result-label">Depth per pass</div>
+              <div class="result-value" id="depthPerPassValue">—</div>
+              <div class="result-help" id="depthPerPassHelp"></div>
+            </section>
+            <section class="result">
+              <div class="result-label">Z plunge rate</div>
+              <div class="result-value" id="plungeRateValue">—</div>
+              <div class="result-help" id="plungeRateHelp"></div>
+            </section>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </section>
+  <section id="simulator-page" role="tabpanel" aria-labelledby="simulator-tab" tabindex="0" hidden>
+    <iframe id="simulator-frame" title="G-code simulator" data-src="./index.html?simulator"></iframe>
+  </section>
+  <div id="converter-page" role="tabpanel" aria-labelledby="converter-tab" tabindex="0">
   <main class="layout">
-    <section id="upload-view" class="upload-view">
+    <section id="upload-view" class="upload-view" lang="fr" aria-label="Importer un fichier C2D">
       <label class="upload-card" for="file-input">
-        <p class="eyebrow">Carbide Create</p>
-        <h1>C2D to GRBL G-code</h1>
+        <p class="eyebrow">Carbide Create · G-code</p>
+        <h1>Convertir votre C2D en G-code</h1>
         <p class="lede">
-          Drop in a <code>.c2d</code> file and generate GRBL G-code directly from the toolpaths embedded in the file.
+          Importez votre fichier Carbide Create. Prévisualisez les parcours, ajustez les paramètres et téléchargez le G-code pour votre CNC.
         </p>
-        <span class="upload-cta">Select a C2D file</span>
+        <span class="upload-cta">Choisir un fichier C2D</span>
+        <p class="upload-hint">.c2d · parcours intégrés au fichier · export GRBL</p>
       </label>
       <input id="file-input" class="file-input" type="file" accept=".c2d">
-      <p id="status" class="status">No file loaded.</p>
+      <p id="status" class="status" role="status" lang="en"></p>
     </section>
 
     <section id="result-view" class="results hidden">
@@ -133,10 +252,84 @@
       </form>
     </div>
   </div>
+  </div>
+
+  <main id="tiling-page" class="tiling-page" role="tabpanel" aria-labelledby="tiling-tab" tabindex="0" hidden lang="fr">
+    <p id="tiling-error" role="alert" hidden></p>
+    <section id="tiling-upload-step" class="upload-view" aria-label="Importer le G-code">
+      <label id="tiling-drop-zone" class="upload-card" for="tiling-file">
+        <p class="eyebrow">Carbide Create · Tiling</p>
+        <h1>Usiner plus grand que sa CNC</h1>
+        <p class="lede">Déposez votre G-code complet. Nous proposons les sections et un repère pour repositionner la plaque contre votre guide latéral.</p>
+        <span class="upload-cta">Choisir un G-code</span>
+        <p class="upload-hint">.nc ou .gcode · un seul outil · mm · Z0 dessus panneau</p>
+      </label>
+      <input id="tiling-file" class="file-input" type="file" accept=".nc,.gcode">
+    </section>
+    <section id="tiling-settings-step" class="panel tiling-settings" hidden aria-labelledby="tiling-settings-title">
+    <h1 id="tiling-settings-title" tabindex="-1">Votre machine et votre plaque</h1>
+    <p id="tiling-file-summary"></p>
+    <div id="tiling-settings-home">
+    <form id="tiling-form">
+      <h3>Surface utile de la CNC</h3>
+      <div class="tiling-grid">
+        <label>Largeur utile X (mm)<input name="machineWidth" type="number" value="1000" min="1" step="any" required></label>
+        <label>Hauteur utile Y (mm)<input name="machineHeight" type="number" value="1000" min="1" step="any" required></label>
+      </div>
+      <h3>Outil et repère</h3>
+      <div class="tiling-grid">
+        <label>Diamètre de la fraise actuelle (mm)<input name="toolDiameter" type="number" value="6" min="0.1" step="any" required></label>
+        <label>Profondeur du trou de référence (mm)<input name="holeDepth" type="number" value="3" min="0.1" step="any" required></label>
+      </div>
+      <h3>Plaque à usiner (workpiece)</h3>
+      <div class="tiling-grid">
+        <label>Largeur de la plaque X (mm)<input name="stockWidth" type="number" min="1" step="any" placeholder="Ex. 900" required></label>
+        <label>Hauteur de la plaque Y (mm)<input name="stockHeight" type="number" min="1" step="any" placeholder="Ex. 2400" required></label>
+      </div>
+    </form>
+    </div>
+    <p id="tiling-live-info" class="tiling-plan-summary" role="status" aria-live="polite"></p>
+    <p>Les minima de plaque proviennent des parcours, pas du brut déclaré par la FAO. La plaque reste à gauche en X0. La hauteur utile peut être inférieure à la hauteur usinée : le tiling prend le relais.</p>
+    <div class="tiling-actions">
+      <button id="tiling-change-file" class="secondary-btn" type="button">Changer de fichier</button>
+      <button id="tiling-next" class="download-btn" type="button" disabled>Voir mon plan</button>
+    </div>
+    </section>
+    <section id="tiling-selection" class="tiling-workspace" hidden aria-label="Aperçu des sections">
+      <section class="panel tiling-canvas-panel">
+        <div class="section-head"><h2>Plan d'usinage</h2><button id="tiling-back" class="secondary-btn" type="button">Modifier les dimensions</button></div>
+        <p>Glissez un repère orange : tous se déplacent ensemble. Les cases affichent ou masquent les sections, sans changer les exports.</p>
+        <div class="preview-toolbar" role="group" aria-label="Navigation du plan de tiling">
+          <button id="tiling-zoom-out" class="secondary-btn" type="button" aria-label="Dézoomer">−</button>
+          <output id="tiling-zoom-level" aria-live="polite">100%</output>
+          <button id="tiling-zoom-in" class="secondary-btn" type="button" aria-label="Zoomer">+</button>
+          <button id="tiling-zoom-fit" class="secondary-btn" type="button">Ajuster</button>
+          <span>Molette : zoom · Glisser le fond : déplacer la vue</span>
+        </div>
+      <div id="tiling-preview" class="tiling-plan"></div>
+      <p class="tiling-safety-note">Gardez le même zéro XY. Les trous doivent rester dans une partie du panneau qui ne sera pas détachée. Pour repositionner : broche arrêtée, alignez le trou avec une pige lisse, rebridez puis dégagez l’outil avant de bouger en XY. Vérifiez que la hauteur de dégagement passe au-dessus des brides et faites un essai à vide.</p>
+      </section>
+      <aside class="panel tiling-sidebar" aria-label="Repère et téléchargement">
+      <h2>Coordonnées du repère</h2>
+      <div class="tiling-grid">
+        <label>X du repère (mm)<input id="tiling-reference-x" name="indexX" form="tiling-form" type="number" step="0.1"></label>
+        <label>Y du repère dans la première section (mm)<input id="tiling-reference-y" name="indexY" form="tiling-form" type="number" step="0.1"></label>
+      </div>
+      <button id="tiling-export" class="download-btn" type="button" disabled>Télécharger les sections (.zip)</button>
+      </aside>
+    </section>
+    <textarea id="tiling-source" hidden readonly aria-label="G-code source importé"></textarea>
+  </main>
 
   <script src="./vendor/sql.js-1.13.0/sql-asm.js"></script>
   <script src="./vendor/pako-2.1.0/pako.min.js"></script>
   <script src="./vendor/clipper-lib-6.4.2/clipper.js"></script>
+  <script src="./language.js"></script>
+  <script src="./feedrate.js"></script>
+  <script src="./simulator.js"></script>
   <script src="./app.js"></script>
+  <script src="./tiling.js"></script>
+  <script src="./gcode-tiling.js"></script>
+  <script src="./navigation.js"></script>
 </body>
 </html>

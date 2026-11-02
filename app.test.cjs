@@ -290,6 +290,32 @@ test("simulation hides all static paths and reveals only elapsed cuts through pa
   assert.equal(vm.runInContext("state.previewRender.staticPathsLayer.attributes.display", ui), "inline");
 });
 
+test("vertical drilling is visible below Z0, deduplicates pecks and follows seeking", () => {
+  const node = () => ({ attributes: {}, children: [],
+    setAttribute(key, value) { this.attributes[key] = value; }, appendChild(child) { this.children.push(child); } });
+  const ui = vm.createContext({
+    document: { getElementById: node, createElementNS: node },
+    window: { initSqlJs: () => new Promise(() => {}) }, console,
+  });
+  vm.runInContext(fs.readFileSync(`${__dirname}/app.js`, "utf8"), ui);
+  const segments = [
+    { motionType: "plunge", startTimeSec: 0, endTimeSec: 9, start: { x: 620.3, y: 992.1, z: 8 }, end: { x: 620.3, y: 992.1, z: -1 } },
+    { motionType: "rapid", startTimeSec: 9, endTimeSec: 10, start: { x: 620.3, y: 992.1, z: -1 }, end: { x: 620.3, y: 992.1, z: 8 } },
+    { motionType: "plunge", startTimeSec: 10, endTimeSec: 20, start: { x: 620.3, y: 992.1, z: 8 }, end: { x: 620.3, y: 992.1, z: -2 } },
+    { motionType: "plunge", startTimeSec: 20, endTimeSec: 21, start: { x: 10, y: 10, z: 9 }, end: { x: 10, y: 10, z: 8 } },
+    { motionType: "rapid", startTimeSec: 21, endTimeSec: 22, start: { x: 20, y: 20, z: 8 }, end: { x: 20, y: 20, z: -2 } },
+  ];
+  for (const [time, count] of [[0, 0], [8, 0], [8.5, 1], [10, 1], [20, 1], [22, 1], [0, 0], [Infinity, 1]]) {
+    const layer = node();
+    ui.renderDrillingMarkers(layer, segments, time);
+    assert.equal(layer.children.length, count, `time ${time}`);
+    if (count) {
+      assert.equal(layer.children[0].attributes.d, "M 620.3 -992.1 l 0 0");
+      assert.equal(layer.children[0].attributes["vector-effect"], "non-scaling-stroke");
+    }
+  }
+});
+
 test("simulated motions point to their exact G-code commands and line offsets", () => {
   const result = generate({ ramping: true });
   let previousLine = -1;
