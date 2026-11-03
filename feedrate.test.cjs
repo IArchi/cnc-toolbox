@@ -45,6 +45,14 @@ test('inline calculator initializes, converts units and preserves settings witho
   node('calculator-form').listeners.input();
   assert.equal(node('feedRateValue').textContent, '1,980 mm/min');
   assert.equal(JSON.parse(storage.get('feedrate-calculator')).diameter, 6);
+  node('flutes').value = '4';
+  node('rpmManual').value = '30000';
+  node('calculator-form').listeners.input();
+  assert.equal(node('feedRateValue').textContent, '6,600 mm/min');
+  assert.equal(node('plungeRateValue').textContent, '1,320 mm/min');
+  assert.ok(!node('feedRateHelp').textContent.includes('Capped'));
+  unitButtons[1].listeners.click();
+  assert.equal(node('feedRateValue').textContent, '259.84 in/min');
   node('flutes').value = '';
   node('calculator-form').listeners.input();
   assert.equal(node('result-warning').hidden, false);

@@ -3,7 +3,7 @@
   if (!root) return;
   const STORAGE_KEY = 'feedrate-calculator';
   const MM_PER_INCH = 25.4;
-  const MIN_FEED_RATE = 100, MAX_FEED_RATE = 2500;
+  const MIN_FEED_RATE = 100;
   const materialsDatabase = {
     'Softwood / MDF': { base: 0.07, min: 0.055, max: 0.09 },
     'Hardwood / Plywood': { base: 0.055, min: 0.045, max: 0.07 },
@@ -60,9 +60,9 @@
     const ratio = step / values.diameter;
     if (ratio > 0.75) feed *= 1 - Math.min(1, (ratio - 0.75) / 0.75) * 0.15;
     const rounded = Math.round(feed);
-    feed = clamp(rounded, MIN_FEED_RATE, MAX_FEED_RATE);
+    feed = Math.max(rounded, MIN_FEED_RATE);
     const plunge = clamp(Math.round(feed * 0.2 * (step > values.diameter * 0.5 ? 0.7 : 1)), 50, feed);
-    return { step, feed, plunge, limit: rounded < MIN_FEED_RATE ? 'min' : rounded > MAX_FEED_RATE ? 'max' : null };
+    return { step, feed, plunge, limit: rounded < MIN_FEED_RATE ? 'min' : null };
   }
   function updateCalculator() {
     const values = { ...dimensions, flutes: Number(elements.flutes.value), toolType: elements.toolType.value, material: elements.material.value, unitMode: unit(), rpmMode: elements.rpmMode.value, rpmManual: Number(elements.rpmManual.value), rpmPreset: elements.rpmPreset.value };
@@ -83,7 +83,6 @@
     elements.depthPerPassHelp.textContent = `${values.toolType === 'Drill' ? 100 : 50}% of the diameter, capped by material thickness.`;
     elements.feedRateHelp.textContent = 'RPM × flute count × chip load.' + (values.toolType === 'VBit' ? ' Reduced chip load for V-bits.' : values.toolType === 'Drill' ? ' Reduced chip load for drills.' : '');
     if (result.limit === 'min') elements.feedRateHelp.textContent += ` Raised to the calculator minimum: ${formatFeed(MIN_FEED_RATE)}. Check chip load with the manufacturer.`;
-    if (result.limit === 'max') elements.feedRateHelp.textContent += ` Capped by the calculator at ${formatFeed(MAX_FEED_RATE)}; this is not your machine’s limit.`;
     elements.plungeRateHelp.textContent = '20% of the XY feed rate, reduced further for deep plunges.';
     elements.feedRateResult.classList.toggle('is-limited', Boolean(result.limit));
   }
