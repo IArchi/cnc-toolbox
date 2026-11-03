@@ -1,5 +1,9 @@
 // Translate presentation only: never rewrite form values, imported names or G-code.
 const languagePairs = [
+  ['Vue de dessus', 'Top view'],
+  ['Échelle visuelle Z', 'Z display scale'],
+  ['Glisser : tourner · Maj-glisser : déplacer · Molette : zoom · Échelle Z uniquement visuelle', 'Drag to rotate · Shift-drag to move · Wheel to zoom · Z scale is visual only'],
+  ['Parcours 3D. Flèches : tourner ; Maj et flèches : déplacer ; plus et moins : zoomer.', '3D toolpaths. Arrow keys rotate; Shift and arrows pan; plus and minus zoom.'],
   ['Calculateur de vitesses CNC', 'CNC Feedrate Calculator'],
   ['Mousse PVC', 'PVC Foam'], ['POM / PMMA / PC', 'POM / PMMA / PC'],
   ['Plongée verticale sous Z0 (taille symbolique)', 'Vertical plunge below Z0 (symbolic size)'],

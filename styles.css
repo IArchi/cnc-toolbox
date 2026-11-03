@@ -116,6 +116,12 @@
 .gcode-simulator .output-panel textarea { min-height: 360px; }
 .simulator-file-bar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .simulator-file-bar p { overflow-wrap: anywhere; }
+.simulator-3d { display: block; width: 100%; height: calc(clamp(360px, 60vh, 640px) + 2px); background: #f5f7fb; border: 1px solid var(--border); border-radius: 16px; touch-action: none; cursor: grab; }
+.simulator-3d:active { cursor: grabbing; }
+.simulator-3d:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.simulator-3d-controls button[aria-pressed="true"] { background: var(--accent); color: white; }
+.simulator-z-scale { flex-direction: row; align-items: center; }
+.simulator-z-scale select { width: auto; padding: 6px 10px; }
 @media (max-width: 1080px) {
   .gcode-simulator .preview-panel, .gcode-simulator .output-panel { grid-column: 1 / -1; grid-row: auto; }
 }
@@ -475,6 +481,7 @@ textarea {
 
 .tool-coordinates {
   position: absolute;
+  z-index: 1;
   bottom: 24px;
   left: 24px;
   max-width: calc(100% - 48px);
@@ -882,6 +889,7 @@ textarea {
 
 .preview {
   display: grid;
+  padding: 0;
   place-items: center;
   overflow: hidden;
 }

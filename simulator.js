@@ -88,6 +88,7 @@ function setupGcodeSimulator() {
   const change = document.createElement('button'); change.type = 'button'; change.className = 'secondary-btn'; change.textContent = 'Change file';
   change.addEventListener('click', () => refs.fileInput.click());
   bar.append(fileName, change); refs.resultView.prepend(bar);
+  if (typeof setupSimulator3D === 'function') setupSimulator3D();
   let version = 0;
   async function load(file) {
     if (!file) return;
@@ -121,6 +122,7 @@ function setupGcodeSimulator() {
       refs.output.setAttribute('aria-label', 'Imported source G-code');
       refs.uploadView.classList.add('hidden'); refs.resultView.classList.remove('hidden');
       resetPlayback(cursor.timeSec);
+      window.simulator3D?.reset();
       renderPreview(parsed, state.generated);
       fileName.textContent = file.name;
       setStatus('');

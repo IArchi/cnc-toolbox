@@ -1635,6 +1635,7 @@ function renderPreview(parsed, generated) {
 }
 
 function zoomPreview(factor, anchor) {
+  if (window.simulator3D?.active) { window.simulator3D.zoom(factor); return; }
   if (!state.previewRender) return;
   const { view, initialView } = state.previewRender;
   const zoom = initialView.width / view.width;
@@ -1649,6 +1650,7 @@ function zoomPreview(factor, anchor) {
 }
 
 function resetPreviewView() {
+  if (window.simulator3D?.active) { window.simulator3D.reset(); return; }
   if (!state.previewRender) return;
   state.previewRender.view = { ...state.previewRender.initialView };
   updatePreviewView();
@@ -1717,6 +1719,7 @@ function updatePreviewMarkers() {
 }
 
 function updatePlaybackVisualization() {
+  if (window.simulator3D?.active) { window.simulator3D.draw(); return; }
   if (!state.previewRender || !state.generated) return;
   updatePreviewMarkers();
   const { staticPathsLayer, progressLayer, generated } = state.previewRender;
