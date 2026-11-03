@@ -46,6 +46,14 @@
               </div>
               <input type="hidden" id="unitMode" value="mm">
             </div>
+            <div class="feedrate-field feedrate-full">
+              <span id="calculation-mode-label">Calculate</span>
+              <div class="segmented-control" role="group" aria-labelledby="calculation-mode-label">
+                <button type="button" class="segmented-button is-active" data-calculation-mode="feed" aria-pressed="true">Feed rate from RPM</button>
+                <button type="button" class="segmented-button" data-calculation-mode="rpm" aria-pressed="false">RPM from feed rate</button>
+              </div>
+              <input type="hidden" id="calculationMode" value="feed">
+            </div>
             <fieldset class="feedrate-grid feedrate-full">
               <legend>1. Your tool</legend>
               <div class="feedrate-field feedrate-full">
@@ -76,7 +84,7 @@
                 <input id="thickness" name="thickness" type="number" min="0.1" step="0.1" value="18">
               </div>
             </fieldset>
-            <fieldset class="feedrate-field feedrate-full">
+            <fieldset class="feedrate-field feedrate-full" id="spindlePanel">
               <legend>3. Your spindle</legend>
               <div class="segmented-control" role="group" aria-label="Spindle model">
                 <button type="button" class="segmented-button" data-rpm-mode="manual" aria-pressed="false">Other spindle</button>
@@ -94,6 +102,12 @@
                 <div class="feedrate-help" id="rpmPresetHelp">Choose a dial position</div>
               </div>
             </fieldset>
+            <fieldset class="feedrate-field feedrate-full" id="desiredFeedPanel" hidden>
+              <legend>3. Desired XY feed rate</legend>
+              <label for="desiredFeed">Desired XY feed rate <span id="feedUnit">(mm/min)</span></label>
+              <input id="desiredFeed" name="desiredFeed" type="number" min="0.01" step="any" value="2000" aria-describedby="desiredFeedHelp">
+              <div class="feedrate-help" id="desiredFeedHelp">Estimate spindle RPM from the recommended chip load for your tool and material.</div>
+            </fieldset>
           </form>
         </article>
         <aside class="feedrate-card feedrate-results" aria-labelledby="results-title">
@@ -101,6 +115,10 @@
           <p class="feedrate-intro">Use these in your CAM software. Values follow your selected units.</p>
           <div id="result-warning" class="feedrate-alert" role="status" hidden>Enter valid values in all fields to get an estimate.</div>
           <div class="result-stack" id="result-stack" aria-live="polite" aria-atomic="true">
+            <section class="result result--primary" id="spindleResult" hidden>
+              <div class="result-label">Recommended spindle speed</div>
+              <div class="result-value" id="spindleValue">—</div>
+            </section>
             <section class="result result--primary" id="feedRateResult">
               <div class="result-label">XY feed rate</div>
               <div class="result-value" id="feedRateValue">—</div>

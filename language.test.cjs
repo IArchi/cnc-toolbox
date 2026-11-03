@@ -28,6 +28,28 @@ test('French static page text has English translations', () => {
   }
 });
 
+test('calculator labels and generated results are translated into French', () => {
+  const html = readFileSync(`${__dirname}/index.html`, 'utf8').split('id="feedrate-page"')[1].split('<section id="simulator-page"')[0];
+  const unchanged = new Set(['(mm)', '(mm/min)', 'Makita RT07', 'Dewalt DW6xx', '—']);
+  for (const match of html.matchAll(/>([^<>]+)</g)) {
+    const text = match[1].replace(/\s+/g, ' ').trim();
+    if (text && !unchanged.has(text)) assert.notEqual(translate(text, 'fr'), text, text);
+  }
+  for (const text of ['Softwood / MDF', 'Hardwood / Plywood', 'PVC Foam', 'Copper / Brass',
+    'Approximately 17,000 RPM; check your specific model.', 'Choose a speed dial position.',
+    'Position 3 · 17,000 RPM (default)', 'Position 2 · 12,000 RPM', '18,000 RPM', '78.74 in/min', '0.12 in', '(in/min)',
+    '50% of the diameter, capped by material thickness.',
+    'RPM × flute count × chip load. Reduced chip load for drills.',
+    'RPM × flute count × chip load. Reduced chip load for V-bits.',
+    'RPM × flute count × chip load. Raised to the calculator minimum: 100 mm/min. Check chip load with the manufacturer.',
+    '20% of the XY feed rate, reduced further for deep plunges.']) {
+    const french = translate(text, 'fr');
+    assert.notEqual(french, text, text);
+    assert.doesNotMatch(french, /Raised|Check chip load|Reduced chip load|RPM|in\/min/);
+    assert.equal(translate(french, 'en'), text, text);
+  }
+});
+
 test('switching language preserves nodes, form values and imported content, and handles new messages', () => {
   class Element {
     constructor(tag, attrs = {}, children = []) {
